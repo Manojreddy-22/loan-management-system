@@ -61,8 +61,9 @@ Open:
 
 ## Demo Admin
 
-Email: `admin@loanapp.com`
+For local development, create an administrator using:
 
-Password: `admin123`
+```bash
+python create_admin.py
 
 Change the demo password before using this outside a local/demo environment.
