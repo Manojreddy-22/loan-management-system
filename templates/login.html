@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+    <h1>Login</h1>
+    <p class="muted">Login as customer or administrator.</p>
+
+    <form id="loginForm">
+        <label>Email</label>
+        <input id="email" type="email" required placeholder="Enter email">
+
+        <label>Password</label>
+        <input id="password" type="password" required placeholder="Enter password">
+
+        <button class="btn primary full" type="submit">Login</button>
+    </form>
+
+    <p class="auth-footer">
+        Don't have an account?
+        <a href="/register">Register</a>
+    </p>
+
+    <div class="demo-box">
+        <strong>Demo admin</strong>
+        <p>Email: admin@loanapp.com</p>
+        <p>Password: admin123</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById("loginForm").addEventListener("submit", async function (event) {
+    event.preventDefault();
+
+    const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            email: document.getElementById("email").value,
+            password: document.getElementById("password").value
+        })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        showToast(data.detail || "Login failed", "error");
+        return;
+    }
+
+    if (data.role === "admin") {
+        window.location.href = "/admin/dashboard";
+    } else {
+        window.location.href = "/dashboard";
+    }
+});
+</script>
+{% endblock %}

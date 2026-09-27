@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">ADMIN DASHBOARD</p>
+        <h1>Loan Management</h1>
+        <p id="adminName" class="muted">Loading...</p>
+    </div>
+</div>
+
+<div id="stats" class="stats-grid"></div>
+
+<section class="details-card">
+    <div class="section-header">
+        <h2>Loan Applications</h2>
+        <button class="btn secondary" onclick="loadAdmin()">Refresh</button>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Applicant</th>
+                    <th>Loan</th>
+                    <th>Amount</th>
+                    <th>EMI</th>
+                    <th>Credit</th>
+                    <th>Eligibility</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="adminLoans">
+                <tr><td colspan="9">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadAdmin() {
+    const response = await fetch("/api/admin/dashboard");
+    const data = await response.json();
+
+    if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+            window.location.href = "/login";
+            return;
+        }
+
+        showToast(data.detail || "Unable to load admin dashboard", "error");
+        return;
+    }
+
+    document.getElementById("adminName").textContent =
+        `Welcome, ${data.admin_name}`;
+
+    document.getElementById("stats").innerHTML = `
+        <div class="stat-card">
+            <span>Customers</span>
+            <strong>${data.stats.customers}</strong>
+        </div>
+        <div class="stat-card">
+            <span>Total Loans</span>
+            <strong>${data.stats.loans}</strong>
+        </div>
+        <div class="stat-card">
+            <span>Approved</span>
+            <strong>${data.stats.approved}</strong>
+        </div>
+        <div class="stat-card">
+            <span>Pending</span>
+            <strong>${data.stats.pending}</strong>
+        </div>
+    `;
+
+    const body = document.getElementById("adminLoans");
+
+    if (data.applications.length === 0) {
+        body.innerHTML = `
+            <tr>
+                <td colspan="9">No loan applications found.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    body.innerHTML = data.applications.map(loan => `
+        <tr>
+            <td>#${loan.id}</td>
+            <td>
+                <strong>${escapeHtml(loan.applicant_name)}</strong><br>
+                <small>${escapeHtml(loan.email)}</small>
+            </td>
+            <td>${escapeHtml(loan.loan_type)}</td>
+            <td>₹${Number(loan.loan_amount).toLocaleString("en-IN")}</td>
+            <td>₹${Number(loan.emi_amount).toFixed(2)}</td>
+            <td>${loan.credit_score}</td>
+            <td>
+                <span class="status ${statusClass(loan.eligibility_status)}">
+                    ${escapeHtml(loan.eligibility_status)}
+                </span>
+            </td>
+            <td>
+                <span class="status ${statusClass(loan.application_status)}">
+                    ${escapeHtml(loan.application_status)}
+                </span>
+            </td>
+            <td>
+                <div class="action-buttons">
+                    <a class="small-btn" href="/loan/${loan.id}">View</a>
+                    ${
+                        loan.application_status === "Pending"
+                        ? `
+                            <button class="small-btn approve"
+                                onclick="updateStatus(${loan.id}, 'Approved')">
+                                Approve
+                            </button>
+                            <button class="small-btn reject"
+                                onclick="updateStatus(${loan.id}, 'Rejected')">
+                                Reject
+                            </button>
+                        `
+                        : ""
+                    }
+                </div>
+            </td>
+        </tr>
+    `).join("");
+}
+
+async function updateStatus(id, status) {
+    const response = await fetch(`/api/admin/loans/${id}/status`, {
+        method: "PATCH",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({status})
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        showToast(data.detail || "Unable to update status", "error");
+        return;
+    }
+
+    showToast(data.message, "success");
+    loadAdmin();
+}
+
+loadAdmin();
+</script>
+{% endblock %}

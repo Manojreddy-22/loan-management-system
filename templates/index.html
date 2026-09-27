@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Loan Management System{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div>
+        <p class="eyebrow">FASTAPI • POSTGRESQL • SQLALCHEMY</p>
+        <h1>Simple and Smart Loan Management</h1>
+        <p class="hero-text">
+            Apply for a loan, check eligibility, calculate EMI,
+            and track your application from one platform.
+        </p>
+
+        <div class="hero-actions">
+            <a class="btn primary" href="/register">Create Account</a>
+            <a class="btn secondary" href="/login">Login</a>
+        </div>
+    </div>
+
+    <div class="hero-card">
+        <div class="bank-icon">🏦</div>
+        <h2>Loan Application</h2>
+        <p>Eligibility and EMI are calculated automatically.</p>
+        <div class="mini-stat">
+            <span>Secure Authentication</span>
+            <strong>✓</strong>
+        </div>
+        <div class="mini-stat">
+            <span>PostgreSQL Database</span>
+            <strong>✓</strong>
+        </div>
+        <div class="mini-stat">
+            <span>REST API</span>
+            <strong>✓</strong>
+        </div>
+    </div>
+</section>
+
+<section class="features">
+    <div class="feature-card">
+        <h3>💰 EMI Calculator</h3>
+        <p>Calculate monthly EMI using loan amount, interest rate and tenure.</p>
+    </div>
+    <div class="feature-card">
+        <h3>📊 Eligibility Check</h3>
+        <p>Evaluate age, income, credit score and EMI-to-income ratio.</p>
+    </div>
+    <div class="feature-card">
+        <h3>📅 EMI Schedule</h3>
+        <p>View principal, interest, due dates and remaining balance.</p>
+    </div>
+</section>
+{% endblock %}

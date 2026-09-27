@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Apply for Loan{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">LOAN APPLICATION</p>
+            <h1>Apply for a Loan</h1>
+            <p class="muted">Enter your details. EMI and eligibility are calculated automatically.</p>
+        </div>
+    </div>
+
+    <form id="loanForm" class="loan-form">
+        <div class="form-grid">
+            <div>
+                <label>Age</label>
+                <input id="age" type="number" min="18" max="100" required placeholder="22">
+            </div>
+
+            <div>
+                <label>Loan Type</label>
+                <select id="loan_type" required>
+                    <option value="">Select loan type</option>
+                    <option>Personal</option>
+                    <option>Home</option>
+                    <option>Education</option>
+                    <option>Vehicle</option>
+                    <option>Business</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Loan Amount (₹)</label>
+                <input id="loan_amount" type="number" min="1" required placeholder="100000">
+            </div>
+
+            <div>
+                <label>Monthly Income (₹)</label>
+                <input id="monthly_income" type="number" min="1" required placeholder="50000">
+            </div>
+
+            <div>
+                <label>Interest Rate (% per year)</label>
+                <input id="interest_rate" type="number" min="0" max="50" step="0.01" required placeholder="4.5">
+            </div>
+
+            <div>
+                <label>Tenure (months)</label>
+                <input id="tenure_months" type="number" min="1" max="360" required placeholder="12">
+            </div>
+
+            <div>
+                <label>Application Date</label>
+                <input id="application_date" type="date" required>
+            </div>
+
+            <div>
+                <label>Credit Score</label>
+                <input id="credit_score" type="number" min="300" max="900" required placeholder="700">
+            </div>
+        </div>
+
+        <div class="form-note">
+            <strong>Eligibility rules for this demo:</strong>
+            age 21–60, income at least ₹15,000, credit score at least 650,
+            and EMI not greater than 40% of monthly income.
+        </div>
+
+        <button class="btn primary full" type="submit">Check Loan & Submit Application</button>
+    </form>
+
+    <div id="applicationResult" class="result-card hidden"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById("application_date").value =
+    new Date().toISOString().split("T")[0];
+
+document.getElementById("loanForm").addEventListener("submit", async function (event) {
+    event.preventDefault();
+
+    const payload = {
+        age: Number(document.getElementById("age").value),
+        loan_type: document.getElementById("loan_type").value,
+        loan_amount: Number(document.getElementById("loan_amount").value),
+        monthly_income: Number(document.getElementById("monthly_income").value),
+        interest_rate: Number(document.getElementById("interest_rate").value),
+        tenure_months: Number(document.getElementById("tenure_months").value),
+        application_date: document.getElementById("application_date").value,
+        credit_score: Number(document.getElementById("credit_score").value)
+    };
+
+    const response = await fetch("/api/loans/apply", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        showToast(data.detail || "Unable to submit application", "error");
+        return;
+    }
+
+    const result = document.getElementById("applicationResult");
+    result.classList.remove("hidden");
+
+    result.innerHTML = `
+        <h2>Application Submitted</h2>
+        <p><strong>Application ID:</strong> #${data.loan_id}</p>
+        <p><strong>EMI:</strong> ₹${Number(data.emi_amount).toFixed(2)}</p>
+        <p><strong>Eligibility:</strong>
+            <span class="status ${statusClass(data.eligibility_status)}">
+                ${escapeHtml(data.eligibility_status)}
+            </span>
+        </p>
+        <p><strong>Application Status:</strong> Pending</p>
+        <a class="btn secondary" href="/loan/${data.loan_id}">View Application</a>
+    `;
+
+    document.getElementById("loanForm").reset();
+    document.getElementById("application_date").value =
+        new Date().toISOString().split("T")[0];
+});
+</script>
+{% endblock %}

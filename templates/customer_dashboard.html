@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Customer Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">CUSTOMER DASHBOARD</p>
+        <h1>My Loan Applications</h1>
+        <p class="muted">Track your applications and EMI details.</p>
+    </div>
+    <a class="btn primary" href="/apply-loan">+ Apply for Loan</a>
+</div>
+
+<div id="profileCard" class="profile-card"></div>
+
+<div id="loanList" class="loan-grid">
+    <div class="loading">Loading applications...</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadDashboard() {
+    const userResponse = await fetch("/api/auth/me");
+    const user = await userResponse.json();
+
+    if (!userResponse.ok) {
+        window.location.href = "/login";
+        return;
+    }
+
+    document.getElementById("profileCard").innerHTML = `
+        <div>
+            <span class="muted">Welcome</span>
+            <h2>${escapeHtml(user.name)}</h2>
+        </div>
+        <div>
+            <span class="muted">Email</span>
+            <strong>${escapeHtml(user.email)}</strong>
+        </div>
+        <div>
+            <span class="muted">Account</span>
+            <strong>${escapeHtml(user.status)}</strong>
+        </div>
+    `;
+
+    const response = await fetch("/api/loans/me");
+    const loans = await response.json();
+
+    if (!response.ok) {
+        showToast(loans.detail || "Unable to load loans", "error");
+        return;
+    }
+
+    const container = document.getElementById("loanList");
+
+    if (loans.length === 0) {
+        container.innerHTML = `
+            <div class="empty-card">
+                <h2>No loan applications yet</h2>
+                <p>Start your first application to see it here.</p>
+                <a class="btn primary" href="/apply-loan">Apply Now</a>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = loans.map(loan => `
+        <div class="loan-card">
+            <div class="loan-card-header">
+                <span class="badge">${escapeHtml(loan.loan_type)}</span>
+                <span class="status ${statusClass(loan.application_status)}">
+                    ${escapeHtml(loan.application_status)}
+                </span>
+            </div>
+
+            <h2>₹${Number(loan.loan_amount).toLocaleString("en-IN")}</h2>
+
+            <div class="loan-info">
+                <div><span>EMI</span><strong>₹${Number(loan.emi_amount).toFixed(2)}</strong></div>
+                <div><span>Interest</span><strong>${loan.interest_rate}%</strong></div>
+                <div><span>Tenure</span><strong>${loan.tenure_months} months</strong></div>
+                <div><span>Eligibility</span><strong>${escapeHtml(loan.eligibility_status)}</strong></div>
+            </div>
+
+            <a class="btn secondary full" href="/loan/${loan.id}">
+                View Details
+            </a>
+        </div>
+    `).join("");
+}
+
+loadDashboard();
+</script>
+{% endblock %}

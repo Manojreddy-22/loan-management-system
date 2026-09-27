@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Loan Details{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">LOAN DETAILS</p>
+        <h1>Application #{{ loan_id }}</h1>
+    </div>
+    <a class="btn secondary" href="/dashboard">Back to Dashboard</a>
+</div>
+
+<div id="loanDetails" class="details-layout">
+    <div class="loading">Loading loan details...</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const loanId = {{ loan_id }};
+
+async function loadLoan() {
+    const response = await fetch(`/api/loans/${loanId}`);
+    const loan = await response.json();
+
+    if (!response.ok) {
+        showToast(loan.detail || "Unable to load loan", "error");
+        return;
+    }
+
+    const schedule = loan.emi_schedule || [];
+
+    document.getElementById("loanDetails").innerHTML = `
+        <section class="details-card">
+            <div class="details-header">
+                <div>
+                    <span class="badge">${escapeHtml(loan.loan_type)}</span>
+                    <h2>${escapeHtml(loan.applicant_name)}</h2>
+                </div>
+                <span class="status ${statusClass(loan.application_status)}">
+                    ${escapeHtml(loan.application_status)}
+                </span>
+            </div>
+
+            <div class="detail-grid">
+                <div><span>Loan Amount</span><strong>₹${Number(loan.loan_amount).toLocaleString("en-IN")}</strong></div>
+                <div><span>Monthly Income</span><strong>₹${Number(loan.monthly_income).toLocaleString("en-IN")}</strong></div>
+                <div><span>Interest Rate</span><strong>${loan.interest_rate}%</strong></div>
+                <div><span>Tenure</span><strong>${loan.tenure_months} months</strong></div>
+                <div><span>Credit Score</span><strong>${loan.credit_score}</strong></div>
+                <div><span>EMI</span><strong>₹${Number(loan.emi_amount).toFixed(2)}</strong></div>
+                <div><span>Eligibility</span><strong>${escapeHtml(loan.eligibility_status)}</strong></div>
+                <div><span>Application Date</span><strong>${escapeHtml(loan.application_date)}</strong></div>
+            </div>
+        </section>
+
+        <section class="details-card">
+            <h2>EMI Schedule</h2>
+
+            ${
+                schedule.length === 0
+                ? `<p class="muted">EMI schedule will be generated after admin approval.</p>`
+                : `
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Due Date</th>
+                                <th>Principal</th>
+                                <th>Interest</th>
+                                <th>EMI</th>
+                                <th>Balance</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${schedule.map(item => `
+                                <tr>
+                                    <td>${item.installment_number}</td>
+                                    <td>${item.due_date}</td>
+                                    <td>₹${Number(item.principal_amount).toFixed(2)}</td>
+                                    <td>₹${Number(item.interest_amount).toFixed(2)}</td>
+                                    <td>₹${Number(item.emi_amount).toFixed(2)}</td>
+                                    <td>₹${Number(item.remaining_balance).toFixed(2)}</td>
+                                    <td>${escapeHtml(item.payment_status)}</td>
+                                </tr>
+                            `).join("")}
+                        </tbody>
+                    </table>
+                </div>
+                `
+            }
+        </section>
+    `;
+}
+
+loadLoan();
+</script>
+{% endblock %}
